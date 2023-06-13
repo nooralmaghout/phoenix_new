@@ -143,9 +143,7 @@ Route::group(["middleware" => ["auth:sanctum"]], function(){
     
 });
 
-// ////////place category
-// Route::get("viewPlaceCategory", [Places_categoryController::class, "listPlaceCategory"]);
-// Route::get("onePlaceCategory/{id}", [Places_categoryController::class, "getSinglePlaceCategory"]);
+
 ///////city
 Route::get("viewCity", [CityController::class, "listCity"]);
 Route::get("oneCity/{id}", [CityController::class, "getSingleCity"]);
