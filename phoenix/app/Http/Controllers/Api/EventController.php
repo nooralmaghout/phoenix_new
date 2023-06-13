@@ -184,15 +184,35 @@ class EventController extends Controller
         ] )->exists()){
 
         if(Event::where("id", $id)->exists()){
-           
+            DB::beginTransaction();  
+
             $event = event::find($id);
+            $images_ids = Image1::where('event_id',$id)->get('id');
+            echo "start";
 
-            $event->delete();
-
-            return response()->json([
-                "status" => 1,
-                "message" => "Event deleted successfully "
-                        ],200);
+            if(!$event || !$images_ids){
+                echo "null";
+                DB::rollback();
+                return response()->json([
+                    "status" => 0,
+                    "message" => "Event not found"
+                ],404);
+            }
+            else{
+                echo "else";
+                foreach($images_ids as $image_id){
+                    echo $image_id->id;
+                    $image =Image1::find($image_id->id);
+                    $image->delete();
+                }
+                // $images->delete();
+                $event->delete();
+                DB::commit();
+                return response()->json([
+                    "status" => 1,
+                    "message" => "Event deleted successfully "
+                ],200);
+            }
         }else{
             return response()->json([
                 "status" => 0,

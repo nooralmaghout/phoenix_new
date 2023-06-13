@@ -178,15 +178,35 @@ class PlaceController extends Controller
             "id" => $user_id,
         ] )->exists()){
         if(Place::where("id", $id)->exists()){
-           
+        DB::beginTransaction();  
             $place = Place::find($id);
 
-            $place->delete();
-
-            return response()->json([
-                "status" => 1,
-                "message" => "Place deleted successfully "
-            ],200);
+            $images_ids = Image1::where('place_id',$id)->get('id');
+            echo "start";
+            if(!$place || !$images_ids){
+                echo "null";
+                DB::rollback();
+                return response()->json([
+                    "status" => 0,
+                    "message" => "Place not found"
+                ],404);
+            }
+            else{
+                echo "else";
+                foreach($images_ids as $image_id){
+                    echo $image_id->id;
+                    $image =Image1::find($image_id->id);
+                    $image->delete();
+                }
+                // $images->delete();
+                $place->delete();
+                DB::commit();
+                return response()->json([
+                    "status" => 1,
+                    "message" => "Place deleted successfully "
+                ],200);
+            }
+            
         }else{
             return response()->json([
                 "status" => 0,
