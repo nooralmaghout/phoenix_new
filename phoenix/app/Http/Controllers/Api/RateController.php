@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Rate;
 use App\Models\Tourist;
+use Illuminate\Support\Facades\DB;
 
 
 class RateController extends Controller
@@ -115,6 +116,23 @@ class RateController extends Controller
 
             $rate->save();
 
+            if (!empty($request->rate)){
+                echo "not";
+                $avg = DB::table('places')->select('places.id',
+                DB::raw('AVG(rates.rate) AS rate_avg'))
+                ->join('rates', 'places.id', '=', 'rates.place_id')
+                ->groupBy('places.id',
+                )->orderBy('rate_avg', 'desc')
+                ->get();
+                //    echo $avg;
+                $average = $avg->where('id',$rate->place_id)->first();
+                //    echo $average->rate_avg;
+                DB::table('places')
+                        ->where('id', $rate->place_id)
+                        ->update(['avg_rate' => $average->rate_avg]);
+
+            }
+
             return response()->json([
                 "status" => 1,
                 "message" => "Rate updated successfully "
@@ -162,6 +180,52 @@ class RateController extends Controller
             ],404);
         }
     
+    }
+
+
+    public function rate(Request $request){
+        $user_id = auth()->user()->id;
+    
+        if(Tourist::where([
+            "id" => $user_id,
+        ] )->exists()){
+        $request->validate([
+            "place_id" => "required",
+            "rate" => "required",
+            "review" => "required"
+        ]);
+        
+      
+        $rate = new Rate();
+
+        $rate->tourist_id = $user_id;
+        $rate->place_id = $request->place_id;
+        $rate->rate = $request->rate;
+        $rate->review = $request->review;
+
+        $rate->save();
+        $avg = DB::table('places')->select('places.id',
+        DB::raw('AVG(rates.rate) AS rate_avg'))
+       ->join('rates', 'places.id', '=', 'rates.place_id')
+       ->groupBy('places.id',
+       )->orderBy('rate_avg', 'desc')
+       ->get();
+    //    echo $avg;
+       $average = $avg->where('id',$request->place_id)->first();
+    //    echo $average->rate_avg;
+       DB::table('places')
+            ->where('id', $request->place_id)
+            ->update(['avg_rate' => $average->rate_avg]);
+        return response()->json([
+            "status" => 1,
+            "message" => "Rate added successfully"
+        ]);
+        }else{
+            return response()->json([
+                "status" => 0,
+                "message" => "You are not registered Tourist!"
+            ],404);
+        }
     }
 
     

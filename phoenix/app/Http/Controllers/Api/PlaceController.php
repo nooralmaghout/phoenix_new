@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Place;
 use App\Models\Admin;
+use App\Models\Tourist;
+use App\Models\Rate;
+use App\Models\Favorite;
 use Illuminate\Support\Facades\DB;
 use App\Models\Image1;
 
@@ -264,6 +267,126 @@ class PlaceController extends Controller
                 "status" => 0,
                 "message" => "Place not found"
             ],404);
+        }
+    }
+
+    public function mostVisited(){
+        $user_id = auth()->user()->id;
+        $rates = Rate::where('rate', '>', 2)->get();
+        // echo $rates;
+        if($rates->isEmpty()){
+            // echo "empty";
+            $city_id = Tourist::where('id',$user_id)->first();
+            $place_details = Place::where('city_id',$city_id->city_id)->get();
+            return response()->json([
+                "status" => 1,
+                "message" => "no rates ",
+                "data" => $place_details
+            ],200);
+        }
+        else{
+            // echo "full";
+            $result = 
+            DB::table('places')->select('places.*',
+             DB::raw('COUNT(rates.place_id) AS places_count'))
+            ->join('rates', 'places.id', '=', 'rates.place_id')->where('rates.rate', '>', 2)
+            // ->select('places.*')
+            ->groupBy('places.id',
+            'places.city_id',
+            'places.ar_name',
+            'places.en_name',
+            'places.open_time',
+            'places.close_time',
+            'places.category_id',
+            'places.ar_description',
+            'places.en_description',
+            'places.ar_location',
+            'places.en_location',
+            'places.map_location',
+            'places.stars',
+            'places.avg_rate',
+            'places.phone_number',
+            'places.breakfast',
+            'places.lunch_dinner',
+            'places.created_at',
+            'places.updated_at',
+            )->orderBy('places_count', 'desc')
+            ->get();
+
+            return response()->json([
+                "status" => 1,
+                "message" => "from rates ",
+                "data" => $result
+            ],200);
+            
+        }
+    }
+
+    public function recommendedForYou(){
+        $user_id = auth()->user()->id;
+        $favs = Favorite::where('tourist_id',$user_id)->get();
+        if($favs->isEmpty()){
+            $tourist = Tourist::where('id',$user_id)->first();
+            echo $tourist->city_id;
+            $place_details = Place::where(['city_id'=>$tourist->city_id],
+                    )->get();
+            return response()->json([
+                "status" => 1,
+                "message" => "no favs ",
+                "data" => $place_details
+            ],200);
+        }
+        else{
+            $cities = DB::table('places')->select('places.city_id',
+            DB::raw('COUNT(places.city_id) AS cities_count','COUNT(places.stars) AS stars_count'))
+           ->join('favorites', 'places.id', '=', 'favorites.place_id')->where('favorites.tourist_id', '=', $user_id)
+           ->groupBy(
+           'places.city_id',
+                 )->orderBy('cities_count', 'desc')
+           ->get();
+           $stars = DB::table('places')->select('places.stars',
+            DB::raw('COUNT(places.stars) AS stars_count'))
+           ->join('favorites', 'places.id', '=', 'favorites.place_id')->where('favorites.tourist_id', '=', $user_id)
+           ->groupBy(
+           'places.stars',
+                 )->orderBy('stars_count', 'desc')
+           ->get();
+           $categories = DB::table('places')->select('places.category_id',
+            DB::raw('COUNT(places.category_id) AS categories_count'))
+           ->join('favorites', 'places.id', '=', 'favorites.place_id')->where('favorites.tourist_id', '=', $user_id)
+           ->groupBy(
+           'places.category_id',
+                 )->orderBy('categories_count', 'desc')
+           ->get();
+            $result_cities =[];
+            $result_stars =[];
+            $result_categories =[];
+            foreach($cities as $city){
+                echo $city->city_id;
+                array_push($result_cities,$city->city_id);
+
+            }
+            foreach($stars as $star){
+                echo $star->stars;
+                array_push($result_stars,$star->stars);
+            }
+            foreach($categories as $category){
+                echo $category->category_id;
+                array_push($result_categories,$category->category_id);
+            }
+
+            $place_details = Place::whereIn('stars', $result_stars)
+            ->whereIn('city_id',$result_cities )
+            ->whereIn('category_id',$result_categories )->get();
+                // array_push($result,$place_details);
+                
+            // }
+            return response()->json([
+                "status" => 1,
+                "message" => "from rates ",
+                "data" => $place_details
+            ],200);
+            
         }
     }
 }

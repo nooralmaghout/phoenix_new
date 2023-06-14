@@ -125,7 +125,7 @@ Route::group(["middleware" => ["auth:sanctum"]], function(){
     Route::get("searchByCityPlan", [PlanController::class, "searchByCity"]);
 
     /////////rate
-    Route::post("addRate", [RateController::class, "createRate"]);
+    Route::post("addRate", [RateController::class, "rate"]);
     Route::get("viewRate/{id}", [RateController::class, "listRate"]);
     Route::get("oneRate/{id}", [RateController::class, "getSingleRate"]);
     Route::delete("deleteRate/{id}", [RateController::class, "deleteRate"]);
@@ -136,6 +136,17 @@ Route::group(["middleware" => ["auth:sanctum"]], function(){
     Route::get("viewSearch", [SearchController::class, "visitorSearch"]);
     Route::get("oneSearch/{id}", [SearchController::class, "getSingleSearch"]);
     Route::delete("deleteSearch/{id}", [SearchController::class, "deleteSearch"]);
+
+
+    /////mostVisited
+    Route::get("mostVisited", [PlaceController::class, "mostVisited"]);
+    /////recommendedForYou
+    Route::get("recommendedForYou", [PlaceController::class, "recommendedForYou"]);
+
+
+    //  /////avgrate
+    //  Route::get("avgRate", [RateController::class, "rate"]);
+
 
 
     
