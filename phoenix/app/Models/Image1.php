@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
 class Image1 extends Model
@@ -21,14 +22,14 @@ class Image1 extends Model
     public $timestamps = false;
     public function event()
     {
-    return $this->belongsTo(Event::class);
+    return $this->belongsTo('App\Models\Image1');
     }
     public function landmark()
     {
-    return $this->belongsTo(Landmark::class);
+    return $this->belongsTo('App\Models\Image1');
     }
     public function place()
     {
-    return $this->belongsTo(Place::class);
+    return $this->belongsTo('App\Models\Image1');
     }
 }

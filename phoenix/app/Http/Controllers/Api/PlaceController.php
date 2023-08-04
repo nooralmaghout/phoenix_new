@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Place;
 use App\Models\Admin;
 use App\Models\Tourist;
+use App\Models\City;
+use App\Models\Places_category;
 use App\Models\Rate;
 use App\Models\Favorite;
 use Illuminate\Support\Facades\DB;
@@ -22,8 +24,8 @@ class PlaceController extends Controller
             "id" => $user_id,
         ] )->exists()){
             $request->validate([
-            "ar_name" => "required|unique:events",
-            "en_name" => "required|unique:events",
+            "ar_name" => "required",
+            "en_name" => "required",
             "city_id" => "required",
             "ar_description"=> "required",
             "en_description"=> "required",
@@ -32,12 +34,13 @@ class PlaceController extends Controller
             "category_id"=> "required",
             "ar_location"=> "required",
             "en_location"=> "required",
-            "map_location"=> "required",
+            "map_x"=> "nullable",
+            "map_y"=> "nullable",
             "stars"=> "required",
             "phone_number"=> "required",
             "breakfast"=> "nullable",
             "lunch_dinner"=> "nullable",
-            "images.*"=> "required|image|mimes:png,jpg,jpeg"
+            "images.*"=> "nullable|image|mimes:png,jpg,jpeg"
             ]);
 
             try {
@@ -59,14 +62,15 @@ class PlaceController extends Controller
             $place->category_id = $request->category_id;
             $place->ar_location = $request->ar_location; 
             $place->en_location = $request->en_location; 
-            $place->map_location = $request->map_location;
+            $place->map_x = $request->map_x;
+            $place->map_y = $request->map_y;
             $place->breakfast = isset($request->breakfast) ? $request->breakfast:"";
             $place->lunch_dinner = isset($request->lunch_dinner) ? $request->lunch_dinner:"";
             $images = $request->images;
 
             $place->save();
 
-        
+        if ($images){
             foreach ($images as $item){
                 echo "k";
                 $image = new Image1();                      
@@ -76,6 +80,8 @@ class PlaceController extends Controller
                 $image->place_id = $place->id;
                 $image->save();
             }
+        }
+            
     
             DB::commit(); 
             return response()->json([
@@ -150,7 +156,8 @@ class PlaceController extends Controller
             $place->category_id = !empty($request->category_id)? $request->category_id : $place->category_id;
             $place->en_location = !empty($request->en_location)? $request->en_location : $place->en_location;
             $place->ar_location = !empty($request->ar_location)? $request->ar_location : $place->ar_location;
-            $place->map_location = !empty($request->map_location)? $request->map_location : $place->map_location;
+            $place->map_x = !empty($request->map_x)? $request->map_x : $place->map_x;
+            $place->map_y = !empty($request->map_y)? $request->map_y : $place->map_y;
             $place->city_id = !empty($request->city_id)? $request->city_id : $place->city_id;
             //$place->type_id = !empty($request->type_id)? $request->type_id : $place->type_id;
 
@@ -224,14 +231,19 @@ class PlaceController extends Controller
         }
     }
 
-    public function searchByName(Request $request){
-        $request->validate([
-            "name" => "required",
+    public function searchByName($search){
+        
+        if(Place::where("ar_name", "like", "%".$search."%")->orWhere("en_name", "like", "%".$search."%")->exists()){
            
-        ]);
-        if(Place::where("ar_name", "like", "%".$request->name."%")->orWhere("en_name", "like", "%".$request->name."%")->exists()){
-           
-            $place_details = Place::where("ar_name", "like", "%".$request->name."%")->orWhere("en_name", "like", "%".$request->name."%")->get();
+            $place_details = Place::where("ar_name", "like", "%".$search."%")->orWhere("en_name", "like", "%".$search."%")->get();
+            foreach ($place_details as $place){
+                $city = City::where("id",$place->city_id)->first();
+                $images = Image1::where("place_id",$place->city_id)->get();
+                $category = Places_category::where("id",$place->category_id)->first();
+                $place->city_id = $city;
+                $place->images = $images;
+                $place->category_id = $category;
+                }
             return response()->json([
                 "status" => 1,
                 "message" => "Place found ",
@@ -245,19 +257,24 @@ class PlaceController extends Controller
         }
     }
 
-    public function searchByCity(Request $request){
-        $request->validate([
-            "name" => "required",
-           
-        ]);
+    public function searchByCity($search){
+        
         if( Place::withWhereHas('city', fn  ($query) => 
-        $query->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")
+        $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
            )->exists()){
            
             $place_details = Place::withWhereHas('city', fn  ($query) => 
-            $query->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")
+            $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
                )->get();
-            return response()->json([
+               foreach ($place_details as $place){
+                // $city = city::where("id",$place->city_id)->first();
+                $images = Image1::where("place_id",$place->city_id)->get();
+                $category = Places_category::where("id",$place->category_id)->first();
+                // $place->city_id = $city;
+                $place->images = $images;
+                $place->category_id = $category;
+                }
+               return response()->json([
                 "status" => 1,
                 "message" => "Place found ",
                 "data" => $place_details
@@ -302,7 +319,8 @@ class PlaceController extends Controller
             'places.en_description',
             'places.ar_location',
             'places.en_location',
-            'places.map_location',
+            'places.map_x',
+            'places.map_y',
             'places.stars',
             'places.avg_rate',
             'places.phone_number',
@@ -312,7 +330,14 @@ class PlaceController extends Controller
             'places.updated_at',
             )->orderBy('places_count', 'desc')
             ->get();
-
+            foreach ($result as $place){
+                $city = City::where("id",$place->city_id)->first();
+                $images = Image1::where("place_id",$place->city_id)->get();
+                $category = Places_category::where("id",$place->category_id)->first();
+                $place->city_id = $city;
+                $place->images = $images;
+                $place->category_id = $category;
+                }
             return response()->json([
                 "status" => 1,
                 "message" => "from rates ",
@@ -381,12 +406,58 @@ class PlaceController extends Controller
                 // array_push($result,$place_details);
                 
             // }
+            foreach ($place_details as $place){
+                $city = City::where("id",$place->city_id)->first();
+                $images = Image1::where("place_id",$place->city_id)->get();
+                $category = Places_category::where("id",$place->category_id)->first();
+                $place->city_id = $city;
+                $place->images = $images;
+                $place->category_id = $category;
+                }
             return response()->json([
                 "status" => 1,
                 "message" => "from rates ",
                 "data" => $place_details
             ],200);
             
+        }
+    }
+    public function listPlace2(){
+        $places = Place::get();
+        foreach ($places as $place){
+            $city = City::where("id",$place->city_id)->first();
+            $images = Image1::where("place_id",$place->city_id)->get();
+            $category = Places_category::where("id",$place->category_id)->first();
+            $place->city_id = $city;
+            $place->images = $images;
+            $place->category_id = $category;
+            }
+        return response()->json([
+            "status" => 1,
+            "message" => "Listing Places: ",
+            "data" => $places
+        ],200);
+    }
+    public function getSinglePlace2($id){
+        if(Place::where("id", $id)->exists()){
+           
+            $place_details = Place::where("id", $id)->first();
+            $city = City::where("id", $place_details->city_id)->first();
+            $category = Places_category::where("id", $place_details->category_id)->first();
+            $place_details->city_id = $city;
+            $place_details->ctegory_id = $category ;
+            $images = Image1::where("place_id", $id)->get();
+            $place_details->images = $images;
+            return response()->json([
+                "status" => 1,
+                "message" => "Place found ",
+                "data" => $place_details
+            ],200);
+        }else{
+            return response()->json([
+                "status" => 0,
+                "message" => "Place not found"
+            ],404);
         }
     }
 }

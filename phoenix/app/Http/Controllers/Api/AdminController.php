@@ -159,13 +159,13 @@ class AdminController extends Controller
         ] )->exists()){
         $number =  new Tourist();
         $all =  $number->count();
-        $out = $number->where("nationality" ,"!=", "Syrian")->count();
+        $out = $number->where("nationality_id" ,"!=", "1")->count();
         $tourist = ($out/$all)*100;
 
         return response()->json([
             "status" => 1,
             "message" => "number of outer tourists" ,
-            "data" => number_format((float)$tourist, 0, '.', '')." %"
+            "data" => number_format((float)$tourist, 0, '.', '')
         ]);
         }else{
             return response()->json([
@@ -183,13 +183,13 @@ class AdminController extends Controller
         ] )->exists()){
         $number =  new Tourist();
         $all =  $number->count();
-        $local = $number->where(["nationality" => "Syrian"])->count();
+        $local = $number->where(["nationality_id" => "1"])->count();
         $tourist = ($local/$all)*100;
 
         return response()->json([
             "status" => 1,
             "message" => "number of local tourists " ,
-            "data" => number_format((float)$tourist, 0, '.', '')." %"
+            "data" => number_format((float)$tourist, 0, '.', '')
         ]);
         }else{
             return response()->json([

@@ -26,4 +26,9 @@ class category extends Model
     {
         $this->attributes['en_name'] = strtolower($value);
     }
+
+    public function landmark(): HasMany
+    {
+        return $this->hasMany('App\Models\Landmark','category_id','id');
+    }
 }

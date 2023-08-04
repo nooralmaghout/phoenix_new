@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\Favorite;
 use App\Models\Tourist;
 use App\Models\Place;
+use App\Models\Places_category;
+use App\Models\city;
+use App\Models\Image1;
 use Illuminate\Support\Facades\DB;
 
 
@@ -47,11 +50,23 @@ class FavoriteController extends Controller
         //$tourist_id = auth()->user()->id;
 
         $favorites = Favorite::where("tourist_id", $tourist_id)->get();
-
+        
+        foreach($favorites as $favorite){
+            $place = Place::where("id", $favorite->place_id)->first();
+            $city = city::where("id", $place->city_id)->first();
+            $category = Places_category::where("id", $place->category_id)->first();
+            $images = Image1::where("place_id",$place->city_id)->get();
+            $place->city_id = $city;
+            $place->category_id = $category;
+            $place->images = $images;
+            $favorite->place_id = $place;
+            
+        }
+        
         return response()->json([
             "status" => 1,
             "message" => "Listing Favorites: ",
-            "data" => $favorites
+            "data" => $favorites->pluck('place_id')
         ],200);
         }else{
             return response()->json([
@@ -78,10 +93,16 @@ class FavoriteController extends Controller
                 "id"=> $id,
                 "tourist_id" => $tourist_id
                 ])->first();
+            $place = Place::where("id", $favorite_details->place_id)->first();
+            $city = City::where("id", $place->city_id)->first();
+            $category = Places_category::where("id", $place->category_id)->first();
+            $place->city_id = $city;
+            $place->category_id = $category;
+            // $favorite_details->place_id = $place;
             return response()->json([
                 "status" => 1,
                 "message" => "Favorite found ",
-                "data" => $favorite_details
+                "data" => $place
             ],200);
         }else{
             return response()->json([
@@ -135,45 +156,35 @@ class FavoriteController extends Controller
         }
     }
 
-    public function searchByName(Request $request){//with
+    public function searchByName($search){//with
         $user_id = auth()->user()->id;
     
         if(Tourist::where([
             "id" => $user_id,
         ] )->exists()){
-        $request->validate([
-            "name" => "required",
-           
-        ]);
-
-
-    //     Author::withWhereHas('books', fn($query) =>
-    //     $query->where('title', 'like', 'PHP%')
-    //    )->get();
-        
-        // $favs = Favorite::with('place')->get();
-        // foreach ($favs as $fav) {
-        //  echo $fav->place->en_name;
-        // }
-
-        // $favs = Favorite::where('tourist_id', '=',  $user_id)->withWhereHas('place', fn  ($query) => 
-        // $query->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")
-        //    )->get();
-        //    foreach ($favs as $fav) {
-        //      echo $fav->place->en_name;
-        //     }
 
         if( Favorite::where('tourist_id', '=',  $user_id)->withWhereHas('place', fn  ($query) => 
-        $query->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")
+        $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
            )->exists()){
            
             $favorite_details = Favorite::where('tourist_id', '=',  $user_id)->withWhereHas('place', fn  ($query) => 
-            $query->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")
+            $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
                )->get();
+               foreach($favorite_details as $favorite){
+                $place = Place::where("id", $favorite->place_id)->first();
+                $city = city::where("id", $place->city_id)->first();
+                $category = Places_category::where("id", $place->category_id)->first();
+                $images = Image1::where("place_id",$place->city_id)->get();
+                $place->city_id = $city;
+                $place->category_id = $category;
+                $place->images = $images;
+                $favorite->place_id = $place;
+                
+            }
             return response()->json([
                 "status" => 1,
                 "message" => "Favorite found ",
-                "data" => $favorite_details
+                "data" => $favorite_details->pluck('place_id')
             ],200);
         }else{
             return response()->json([
@@ -189,32 +200,42 @@ class FavoriteController extends Controller
         }
     }
 
-    public function searchByCity(Request $request){//with
+    public function searchByCity($search){//with
         $user_id = auth()->user()->id;
     
         if(Tourist::where([
             "id" => $user_id,
         ] )->exists()){
-        $request->validate([
-            "name" => "required",
-        ]);
+        
         
         $favs = Favorite::where('tourist_id', '=',  $user_id)->withWhereHas('place', fn  ($query) => 
         $query->withWhereHas('city', fn  ($q) =>
-         $q->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")))->get();
+         $q->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")))->get();
             // $query->where($query->place->city->ar_name, 'like',  "%".$request->name."%")->orWhere($query->place->city->en_name, 'like', "%".$request->name."%")
                
         if(Favorite::where('tourist_id', '=',  $user_id)->withWhereHas('place', fn  ($query) => 
         $query->withWhereHas('city', fn  ($q) =>
-         $q->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")))->exists()){
+         $q->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")))->exists()){
            
             $favorite_details = Favorite::where('tourist_id', '=',  $user_id)->withWhereHas('place', fn  ($query) => 
             $query->withWhereHas('city', fn  ($q) =>
-             $q->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")))->get();
-            return response()->json([
+             $q->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")))->get();
+             foreach($favorite_details as $favorite){
+                $place = Place::where("id", $favorite->place_id)->first();
+                $city = city::where("id", $place->city_id)->first();
+                $category = Places_category::where("id", $place->category_id)->first();
+                $images = Image1::where("place_id",$place->city_id)->get();
+                $place->city_id = $city;
+                $place->category_id = $category;
+                $place->images = $images;
+                $favorite->place_id = $place;
+                
+            }
+
+             return response()->json([
                 "status" => 1,
                 "message" => "Favorite found ",
-                "data" => $favorite_details
+                "data" => $favorite_details->pluck('place_id')
             ],200);
         }else{
             return response()->json([

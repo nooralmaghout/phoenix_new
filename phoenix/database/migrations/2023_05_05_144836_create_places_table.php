@@ -30,7 +30,8 @@ return new class extends Migration
             $table->string('en_description');
             $table->string('ar_location')->nullable();
             $table->string('en_location')->nullable();
-            $table->string('map_location');
+            $table->string('map_x')->nullable();
+            $table->string('map_y')->nullable();
             $table->boolean('breakfast')->nullable();
             $table->boolean('lunch_dinner')->nullable();
             $table->timestamps();

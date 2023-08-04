@@ -38,7 +38,8 @@ return new class extends Migration
             $table->time('open_time');
             $table->time('close_time');
             $table->binary('photo')->nullable();
-            $table->string('map_location')->nullable();
+            $table->string('map_x')->nullable();
+            $table->string('map_y')->nullable();
             $table->unsignedBigInteger('days_off_id');
             $table->foreign('days_off_id')->references('id')->on('days_offs');
             //$table->enum('days_off',["friday","saturday","sunday", "friday and saturday", "saturday and sunday"]);

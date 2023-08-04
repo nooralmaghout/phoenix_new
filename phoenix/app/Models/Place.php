@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
@@ -17,7 +18,6 @@ class Place extends Model
         "ar_name",
         "en_name",
         "city_id",
-        //"type_id",
         "open_time",
         "close_time",
         "category_id",
@@ -25,7 +25,8 @@ class Place extends Model
         "en_description",
         "ar_location",
         "en_location",
-        "map_location",
+        "map_x",
+        "map_y",
         "stars",
         "avg_rate",
         "phone_number",
@@ -65,5 +66,31 @@ class Place extends Model
     public function city(): BelongsTo
     {
     return $this->belongsTo(city::class);
+    }
+
+    public function images(): HasMany
+    {
+    return $this->hasMany('App\Model\Image1');
+    }
+
+    public function plan1(){
+        return $this->hasMany('App\Models\Plan','breakfast_id','id');
+    }
+    public function plan2(){
+        return $this->hasMany('App\Models\Plan','lunch_id','id');
+    }
+    public function plan3(){
+        return $this->hasMany('App\Models\Plan','dinner_id','id');
+    }
+    public function plan4(){
+        return $this->hasMany('App\Models\Plan','hotel_id','id');
+    }
+    public function favorite()
+    {
+        return $this->belongsTo(Place::class);
+    }
+    public function category()
+    {
+    return $this->belongsTo(places_category::class);
     }
 }

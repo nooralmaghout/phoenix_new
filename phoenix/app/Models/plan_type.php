@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class plan_type extends Model
 {
@@ -25,5 +27,8 @@ class plan_type extends Model
     public function setEnNameAttribute($value)
     {
         $this->attributes['en_name'] = strtolower($value);
+    }
+    public function plan(){
+        return $this->hasMany('App\Models\Plan','type_id','id');
     }
 }

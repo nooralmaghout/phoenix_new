@@ -27,7 +27,8 @@ class LandmarkSeeder extends Seeder
         'category_id' => 1,
         "ar_location" => 'قلعة',
         "en_location" => 'Landmark',
-        "map_location" => 'Landmark',
+        "map_x" => 'damascus',
+        "map_y" => 'damascus',
         "days_off_id" => 1
         ]);
     }

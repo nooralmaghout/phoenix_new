@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Tourist;
+use App\Models\City;
+use App\Models\Nationality;
 
 
 class TouristController extends Controller
@@ -85,6 +87,11 @@ class TouristController extends Controller
         if(Tourist::where([
             "id" => $user_id,
         ] )->exists()){
+            $user = auth()->user();
+            $city = City::where("id", $user->city_id)->first();
+            $user->city_id = $city;
+            $nationality = Nationality::where("id", $user->nationality_id)->first();
+            $user->nationality_id = $nationality;
         return response()->json([
     
             "status"=>1,

@@ -57,7 +57,8 @@ Route::group(["middleware" => ["auth:sanctum"]], function(){
     Route::get("oneEvent/{id}", [EventController::class, "getSingleEvent"]);
     Route::delete("deleteEvent/{id}", [EventController::class, "deleteEvent"]);
     Route::put("updateEvent/{id}", [EventController::class, "updateEvent"]);
-    
+    Route::get("searchByNameEvents2/{search}", [EventController::class, "searchByName"]);
+    Route::get("searchByCityEvents2/{search}", [EventController::class, "searchByCity"]);
 
     /////////landmark
     Route::post("addLandmark", [LandmarkController::class, "createLandmark"]);
@@ -65,7 +66,8 @@ Route::group(["middleware" => ["auth:sanctum"]], function(){
     Route::get("oneLandmark/{id}", [LandmarkController::class, "getSingleLandmark"]);
     Route::delete("deleteLandmark/{id}", [LandmarkController::class, "deleteLandmark"]);
     Route::put("updateLandmark/{id}", [LandmarkController::class, "updateLandmark"]);
-   
+    Route::get("searchByNameLandmarks2/{search}", [LandmarkController::class, "searchByName"]);
+    Route::get("searchByCityLandmarks2/{search}", [LandmarkController::class, "searchByCity"]);
 
     /////////place
     Route::post("createPlace", [PlaceController::class, "createPlace"]);
@@ -73,6 +75,8 @@ Route::group(["middleware" => ["auth:sanctum"]], function(){
     Route::get("onePlace/{id}", [PlaceController::class, "getSinglePlace"]);
     Route::delete("deletePlace/{id}", [PlaceController::class, "deletePlace"]);
     Route::put("updatePlace/{id}", [PlaceController::class, "updatePlace"]);
+    Route::get("searchByNamePlaces2/{search}", [PlaceController::class, "searchByName"]);
+    Route::get("searchByCityPlaces2/{search}", [PlaceController::class, "searchByCity"]);
 
     /////////Image
     Route::delete("deleteImage/{id}", [ImageController::class, "deleteImage"]);
@@ -90,30 +94,30 @@ Route::group(["middleware" => ["auth:sanctum"]], function(){
     Route::delete("deleteTourist", [TouristController::class, "deleteTourist"]);
 
     /////////event
-    Route::get("touristviewEvent", [EventController::class, "listEvent"]);
-    Route::get("touristoneEvent/{id}", [EventController::class, "getSingleEvent"]);
-    Route::get("searchByNameEvents", [EventController::class, "searchByName"]);
-    Route::get("searchByCityEvents", [EventController::class, "searchByCity"]);
+    Route::get("touristviewEvent", [EventController::class, "listEvent2"]);
+    Route::get("touristoneEvent/{id}", [EventController::class, "getSingleEvent2"]);
+    Route::get("searchByNameEvents/{search}", [EventController::class, "searchByName"]);
+    Route::get("searchByCityEvents/{search}", [EventController::class, "searchByCity"]);
 
     /////////landmark
-    Route::get("touristviewLandmark", [LandmarkController::class, "listLandmark"]);
-    Route::get("touristoneLandmark/{id}", [LandmarkController::class, "getSingleLandmark"]);
-     Route::get("searchByNameLandmarks", [LandmarkController::class, "searchByName"]);
-    Route::get("searchByCityLandmarks", [LandmarkController::class, "searchByCity"]);
+    Route::get("touristviewLandmark", [LandmarkController::class, "listLandmark2"]);
+    Route::get("touristoneLandmark/{id}", [LandmarkController::class, "getSingleLandmark2"]);
+    Route::get("searchByNameLandmarks/{search}", [LandmarkController::class, "searchByName"]);
+    Route::get("searchByCityLandmarks/{search}", [LandmarkController::class, "searchByCity"]);
 
     /////////place
-    Route::get("touristviewPlace", [PlaceController::class, "listPlace"]);
-    Route::get("touristonePlace/{id}", [PlaceController::class, "getSinglePlace"]);
-    Route::get("searchByNamePlaces", [PlaceController::class, "searchByName"]);
-    Route::get("searchByCityPlaces", [PlaceController::class, "searchByCity"]);
+    Route::get("touristviewPlace", [PlaceController::class, "listPlace2"]);
+    Route::get("touristonePlace/{id}", [PlaceController::class, "getSinglePlace2"]);
+    Route::get("searchByNamePlaces/{search}", [PlaceController::class, "searchByName"]);
+    Route::get("searchByCityPlaces/{search}", [PlaceController::class, "searchByCity"]);
 
     /////////favorite
     Route::post("addFavorite/{id}", [FavoriteController::class, "createFavorite"]);
     Route::get("viewFavorite", [FavoriteController::class, "listFavorite"]);
     Route::get("oneFavorite/{id}", [FavoriteController::class, "getSingleFavorite"]);
     Route::delete("deleteFavorite/{id}", [FavoriteController::class, "deleteFavorite"]);
-    Route::get("searchByNameFavorites", [FavoriteController::class, "searchByName"]);
-    Route::get("searchByCityFavorites", [FavoriteController::class, "searchByCity"]);
+    Route::get("searchByNameFavorites/{search}", [FavoriteController::class, "searchByName"]);
+    Route::get("searchByCityFavorites/{search}", [FavoriteController::class, "searchByCity"]);
 
     /////////plan
     Route::post("addPlan", [PlanController::class, "createPlan"]);//
@@ -121,8 +125,14 @@ Route::group(["middleware" => ["auth:sanctum"]], function(){
     Route::get("onePlan/{id}", [PlanController::class, "getSinglePlan"]);
     Route::delete("deletePlan/{id}", [PlanController::class, "deletePlan"]);
     Route::put("updatePlan/{id}", [PlanController::class, "updatePlan"]);//
-    Route::get("searchByNamePlan", [PlanController::class, "searchByName"]);
-    Route::get("searchByCityPlan", [PlanController::class, "searchByCity"]);
+    Route::get("searchByNamePlan/{search}", [PlanController::class, "searchByName"]);
+    Route::get("searchByCityPlan/{search}", [PlanController::class, "searchByCity"]);
+    Route::put("suggestEvent", [PlanController::class, "suggestEvent"]);
+    Route::put("suggestLandmark", [PlanController::class, "suggestLandmark"]);
+    Route::put("suggestPlace", [PlanController::class, "suggestPlace"]);
+    Route::put("suggestHotel", [PlanController::class, "suggestHotel"]);
+    Route::put("getMeals", [PlanController::class, "getMeals"]);
+    Route::put("suggestPlan", [PlanController::class, "suggestPlan"]);
 
     /////////rate
     Route::post("addRate", [RateController::class, "rate"]);
@@ -182,3 +192,4 @@ Route::get("oneDays_off/{id}", [Days_offController::class, "getSingleDays_off"])
  Route::get("viewEventImages/{id}", [ImageController::class, "listEventImages"]);
  Route::get("viewPlaceImages/{id}", [ImageController::class, "listPlaceImages"]);
  Route::get("oneImage/{id}", [ImageController::class, "getSingleiImage"]);
+ Route::post("addImage", [ImageController::class, "store"]);

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class places_category extends Model
 {
@@ -25,5 +27,8 @@ class places_category extends Model
     public function setEnNameAttribute($value)
     {
         $this->attributes['en_name'] = strtolower($value);
+    }
+    public function place(){
+        return $this->hasMany('App\Models\Place','category_id','id');
     }
 }

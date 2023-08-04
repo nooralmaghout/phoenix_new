@@ -20,6 +20,8 @@ return new class extends Migration
             $table->unsignedBigInteger('city_id');
             $table->foreign('city_id')->references('id')->on('citys');
             //$table->enum('city',['Damascus','Daraa','Rif Dimashq','Hamah','Lattakia','Tartus','AlQunaitira','Idlib','Raqqa','Dier AlZour','AlHassakah','AlSweedaa','Aleppo','Homs']);
+            $table->unsignedBigInteger('hotel_id')->nullable()->constrained();
+            $table->foreign('hotel_id')->references('id')->on('places');
             $table->unsignedBigInteger('breakfast_id')->nullable()->constrained();
             $table->foreign('breakfast_id')->references('id')->on('places');
             $table->unsignedBigInteger('lunch_id')->nullable()->constrained();

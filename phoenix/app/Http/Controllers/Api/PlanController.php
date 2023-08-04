@@ -1,15 +1,104 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
+use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Plan;
+use App\Models\Rate;
+
+use App\Models\Place;
+use App\Models\Event;
 use App\Models\Tourist;
+use App\Models\Landmark;
+use App\Models\Favorite;
+use DateTime;
+use Phpml\Math\Distance\Euclidean;
+// use MathPHP\LinearALgebra\Vector;
+
 
 
 class PlanController extends Controller
 {
+    public function suggestPlan(Request $request){
+        $request->validate([
+            "city_id" => "required",
+            "type_id" => "required",
+            "category_id1" => "nullable",
+            "category_id2" => "nullable",
+            "category_id3" => "nullable",
+            "start_time" => "required",
+            "end_time" => "required",
+            "start_date" => "required",
+            "stars" => "required",
+
+        ]);
+        $finalPlan = Array();
+        $date1=Carbon::parse($request->start_date);
+        // $date2=Carbon::parse($request->end_date);
+        $date3=Carbon::today();
+        // echo $date3;
+        // $interval = $date1->diff($date2);
+        // $days = $interval->format('%a');
+        // echo $days;
+
+        if($date1->lt($date3)){
+                return response()->json([
+                    "status" => 1,
+                    "message" => "Invalid date value!"
+                ]); 
+            }
+        
+            
+        if($request->start_time>=$request->end_time){
+            return response()->json([
+            "status" => 1,
+            "message" => "Invalid time value!"
+        ]); }
+
+        if($request->category_id1!=Null){
+            
+            $r['city_id'] = $request->city_id;
+            $r['type_id'] = $request->type_id;
+            $r['category_id'] = $request->category_id;
+            $r['stars'] = $request->stars;
+            $finalPlan['meal 1'] = $this->suggestPlace($r);
+        }
+        if($request->category_id2!=Null){
+            
+            $r['city_id'] = $request->city_id;
+            $r['type_id'] = $request->type_id;
+            $r['category_id'] = $request->category_id;
+            $r['stars'] = $request->stars;
+            $finalPlan['meal 2'] = $this->suggestPlace($r);
+        }
+        if($request->category_id3!=Null){
+            // $r=Array();
+            $r['city_id'] = $request->city_id;
+            $r['type_id'] = $request->type_id;
+            $r['category_id'] = $request->category_id;
+            $r['stars'] = $request->stars;
+            $finalPlan['meal 3'] = $this->suggestPlace($r);
+        }
+        $r['city_id'] = $request->city_id;
+        $r['type_id'] = $request->type_id;
+        $r['category_id'] = $request->category_id;
+        $r['stars'] = $request->stars;
+        $r['start_date'] = $request->start_date;
+        $r['start_time'] = $request->start_time;
+        $r['end_time'] = $request->end_time;
+        
+        $finalPlan['landmarks'] = $this->suggestLandmark($r);
+        $finalPlan['events'] = $this->suggestEvent($r);
+        $finalPlan['hotels'] = $this->suggestHotel($r);
+
+        return response()->json([
+            "status" => 1,
+            "message" => "event suggesstions:2!",
+            "data" =>  $finalPlan
+        ]); 
+
+    }
     public function createPlan(Request $request){
         $user_id = auth()->user()->id;
     
@@ -19,16 +108,16 @@ class PlanController extends Controller
         $request->validate([
             "name" => "required",
             "city_id" => "required",
-            "breakfast_id" => "required",
-            "lunch_id" => "required",
-            "dinner_id" => "required",
-            "landmark_id" => "required",
-            "event_id" => "required",
+            "breakfast_id" => "nullable",
+            "lunch_id" => "nullable",
+            "dinner_id" => "nullable",
+            "landmark_id" => "nullable",
+            "event_id" => "nullable",
             "type_id" => "required",
             "start_time" => "required",
             "end_time" => "required",
             "start_date" => "required",
-            "end_date" => "required",
+            "hotel_id" => "nullable",
             "stars" => "required",
 
         ]);
@@ -47,7 +136,7 @@ class PlanController extends Controller
         $plan->start_time = $request->start_time;
         $plan->end_time = $request->end_time;
         $plan->start_date = $request->start_date;
-        $plan->end_date = $request->end_date;
+        $plan->hotel_id = $request->end_date;
         $plan->stars = $request->stars;
 
         $plan->save();
@@ -64,15 +153,241 @@ class PlanController extends Controller
         }
     }
 
+    public function suggestPlace($r){
+    $user_id = auth()->user()->id;
+    $plan = Array($r['stars'],0,0,0,0,0,0,0,0,0,0);
+    
+    if($r['category_id'] == 1){
+        $plan[0]=1;
+    }
+    if($r['category_id'] == 2){
+        $plan[1]=1;
+    }
+    if($r['category_id'] == 3){
+        $plan[2]=1;
+        $plan[0]=0.5;
+    }
+    if($r['category_id'] == 4){
+        $plan[3]=1;
+        $plan[1]=0.5;
+    }
+    if($r['type_id'] == 2){
+        $plan[8]=1;
+    }
+    if($r['type_id'] == 1){
+        $plan[9]=1;
+    }
+    $euclidean = new Euclidean();
+    $place_list =Array();
+    $result =[];
+    $places = Place::with('city','category')->get();
+    foreach($places as $p){
+        $rate= Rate::where('tourist_id',$user_id)->where('place_id',$p->id)->first();
+
+        if($rate==Null ||  $rate->rate > 2 ){
+            $restaurant = Array(
+                $p->stars,0,0,0,0,0,0,0,0,0,0);
+            if($p->category_id == 1){
+                $restaurant[0]=1;
+            }
+            if($p->category_id == 2){
+                $restaurant[1]=1;
+            }
+            if($p->category_id == 3){
+                $restaurant[2]=1;
+                $restaurant[0]=0.5;
+            }
+            if($p->category_id == 4){
+                $restaurant[3]=1;
+                $restaurant[1]=0.5;
+            }
+            if($p->category_id == 5){
+                $restaurant[4]=1;
+            }
+            if($p->category_id == 6){
+                $restaurant[5]=1;
+            }
+            if($p->category_id == 7){
+                $restaurant[6]=1;
+            }
+            if($p->category_id == 8){
+                $restaurant[7]=1;
+            }
+            if($p->category_id == 9){
+                $restaurant[8]=1;
+            }
+            if($p->category_id == 10){
+                $restaurant[9]=1;
+            }
+            
+            $place_list[$p->id] =  $restaurant;
+            $a= array('sim'=> $euclidean->distance($plan, $restaurant),'place'=>$p);
+            array_push($result,$a);
+     
+        }
+        
+   
+    }
+    
+    $key_values = array_column($result, 'sim'); 
+    array_multisort($key_values, SORT_ASC, $result);
+    $array=array_column($result,'place');
+    foreach($array as $key => $value){
+        if($value->city_id !=$r['city_id']){
+            unset($array[$key]);
+        }
+    }
+    return array_values($array);
+
+    }
+    
+    
+    public function suggestLandmark($request){
+        
+        $date1=Carbon::parse($request['start_date']);
+        $date3=Carbon::today();
+        
+        $date11 = Carbon::createFromFormat('Y-m-d',$request['start_date']);
+        $date = strtolower($date11->format('l'));
+        // echo $date;
+        $suggestion = Landmark::with('days_off','city','category','type')->where('city_id',$request['city_id'])->get();
+        
+        $suggestion =  $suggestion->where('open_time','<=',$request['start_time'])->where('close_time','<=',$request['end_time']);
+        foreach ($suggestion as $key => $value) {
+            if ($value->days_off->en_name == $date) {
+                $suggestion->forget($key);
+            }
+        }
+        
+        return $suggestion;
+        
+    
+    }
+
+
+    public function suggestEvent($request){
+
+         $date1=Carbon::parse($request['start_date']);
+        
+        $date3=Carbon::today();
+        // echo $request['start_time'];
+        // echo $request['end_time'];
+    
+        $date = Carbon::parse($date1);
+        
+        $suggestion = Event::with('city')
+        ->where('city_id',$request['city_id'])
+        ->where('end_date','>=',$date)
+        ->where('start_date','<=',$date)
+        ->where(function ($query)use($request){
+            $query->where('open_time','>=',$request['start_time'])
+            ->where('close_time','<=',$request['end_time']);
+          })
+        ->orWhere(function ($query)use($request){
+            $query->where('open_time','>=',$request['start_time'])
+            ->where('open_time','<=',$request['end_time'])
+            ->where('close_time','>=',$request['end_time']);
+          })
+        ->orWhere(function ($query)use($request){
+            $query->where('close_time','<=',$request['end_time'])
+            ->where('open_time','<=',$request['start_time'])
+            ->where('close_time','>=',$request['start_time']);
+            })
+        ->orWhere(function ($query)use($request){
+            $query->where('open_time','<=',$request['start_time'])
+            ->where('close_time','>=',$request['end_time']);
+        })
+        ->get();
+        
+        
+    return $suggestion;
+
+        
+    }
+
+    public function getMeals(Request $request){
+        $request->validate([
+            "city_id" => "required",
+            "start_time" => "required",
+            "end_time" => "required",
+            "start_date" => "required",
+            
+        ]);
+        $date1=Carbon::parse($request->start_date);
+        
+        $date3=Carbon::today();
+       
+
+        if($date1->lt($date3)){
+                return response()->json([
+                    "status" => 1,
+                    "message" => "Invalid date value!"
+                ]); 
+            }
+        
+            
+            if($request->start_time>=$request->end_time){
+            return response()->json([
+            "status" => 1,
+            "message" => "Invalid time value!"
+        ]); 
+    
+    }
+    
+    
+        $time1=Carbon::parse($request->start_time);
+        $time2=Carbon::parse($request->end_time);
+       
+        $diff =$time1->diffInHours($time2);
+        echo $diff ;
+        if($diff>=10){
+            $meals=3;
+        }elseif($diff>=6){
+            $meals=2;
+        }else $meals=1;
+    
+    
+    return response()->json([
+        "status" => 1,
+        "message" => "meals:!",
+        "data" => $meals
+    ]); 
+        
+    }
+
+    public function suggestHotel($request){
+        $user_id = auth()->user()->id;
+
+
+        $date1=Carbon::parse($request['start_date']);
+        
+        $date3=Carbon::today();
+    
+        $hotels = Place::with('city','category')
+        ->where('category_id',5)
+        ->where('city_id',$request['city_id'])
+        ->where('stars',$request['stars'])->get();
+        $list = [];
+        foreach($hotels as $value){
+            $rate= Rate::where('tourist_id',$user_id)->where('place_id',$value->id)->first();
+            if($rate==Null ||  $rate->rate > 2 ){
+                array_push($list,$value);
+            }
+        }
+
+    return $list;
+        
+    }
+
+
     public function listPlan(){
         $tourist_id = auth()->user()->id;
     
         if(Tourist::where([
             "id" => $tourist_id,
         ] )->exists()){
-        //$tourist_id = auth()->user()->id;
 
-        $plans = Plan::where("tourist_id", $tourist_id)->get();
+        $plans = Plan::with('landmark','breakfast','lunch','dinner','hotel','city','event','type')->where("tourist_id", $tourist_id)->get();
 
         return response()->json([
             "status" => 1,
@@ -87,6 +402,12 @@ class PlanController extends Controller
         }
     }
 
+
+
+    ////////////////
+
+
+    
     public function getSinglePlan($id){
         $tourist_id = auth()->user()->id;
     
@@ -99,7 +420,8 @@ class PlanController extends Controller
             "tourist_id" => $tourist_id
             ])->exists()){
            
-            $plan_details = Plan::where([
+            $plan_details = Plan::with('landmark','breakfast','lunch','dinner','hotel','city','event','type')->
+            where([
                 "id"=> $id,
                 "tourist_id" => $tourist_id
                 ]
@@ -147,7 +469,7 @@ class PlanController extends Controller
             $plan->start_time = !empty($request->start_time)? $request->start_time : $plan->start_time;
             $plan->end_time = !empty($request->end_time)? $request->end_time : $plan->end_time;
             $plan->start_date = !empty($request->start_date)? $request->start_date : $plan->start_date;
-            $plan->end_date = !empty($request->end_date)? $request->end_date : $plan->end_date;
+            $plan->hotel_id = !empty($request->hotel_id)? $request->hotel_id : $plan->hotel_id;
             $plan->stars = !empty($request->stars)? $request->stars : $plan->stars;
 
             $plan->save();
@@ -203,21 +525,18 @@ class PlanController extends Controller
         }
     }
 
-    public function searchByName(Request $request){
+    public function searchByName($search){
         $user_id = auth()->user()->id;
     
         if(Tourist::where([
             "id" => $user_id,
         ] )->exists()){
-        $request->validate([
-            "name" => "required",
-           
-        ]);
-        if(Plan::where("name", "like", "%".$request->name."%"
+       
+        if(Plan::where("name", "like", "%".$search."%"
         )->where("tourist_id",$user_id)
         ->exists()){
            
-            $plan_details = Plan::where("name", "like", "%".$request->name."%")
+            $plan_details = Plan::where("name", "like", "%".$search."%")
             ->where("tourist_id",$user_id)
             ->get();
             return response()->json([
@@ -239,26 +558,17 @@ class PlanController extends Controller
         }
     }
 
-    public function searchByCity(Request $request){//with
+    public function searchByCity($search){//with
         $user_id = auth()->user()->id;
-    
-        $request->validate([
-            "name" => "required",
-           
-        ]);
         if(Tourist::where([
             "id" => $user_id,
         ] )->exists()){
-        $request->validate([
-            "name" => "required",
-           
-        ]);
         if( Plan::where('tourist_id', '=',  $user_id)->withWhereHas('city', fn  ($query) => 
-        $query->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")
+        $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
            )->exists()){
            
             $plan_details = Plan::where('tourist_id', '=',  $user_id)->withWhereHas('city', fn  ($query) => 
-            $query->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")
+            $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
                )->get();
             return response()->json([
                 "status" => 1,

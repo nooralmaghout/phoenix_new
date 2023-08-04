@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Rate;
 use App\Models\Tourist;
+use App\Models\Place;
 use Illuminate\Support\Facades\DB;
 
 
@@ -50,10 +51,14 @@ class RateController extends Controller
         if(Tourist::where([
             "id" => $user_id,
         ] )->exists()){
-            if(Rate::where("place_id", $place_id)->exists()){
+        if(Rate::where("place_id", $place_id)->exists()){
            
         $rates = Rate::where("place_id", $place_id)->get();
 
+        foreach($rates as $rate){
+            $tourist = Tourist::where("id",$rate->tourist_id)->first();
+            $rate->tourist_id = $tourist->name;
+        }
         return response()->json([
             "status" => 1,
             "message" => "Listing Rates: ",
@@ -82,6 +87,10 @@ class RateController extends Controller
         if(Rate::where("id", $id)->exists()){
            
             $rate_details = Rate::where("id", $id)->first();
+            $place = Place::where("id", $rate_details->place_id)->first();
+            $tourist = Tourist::where("id", $rate_details->touist_id)->first();
+            $rate_details->place_id = $place;
+            $rate_details->tourist_id = $tourist;
             return response()->json([
                 "status" => 1,
                 "message" => "Rate found ",

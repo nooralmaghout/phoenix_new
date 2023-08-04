@@ -25,7 +25,8 @@ class Event extends Model
         "en_description",
         "ar_location",
         "en_location",
-        "map_location"
+        "map_x",
+        "map_y"
     ];
 
     public $timestamps = false;
@@ -82,6 +83,9 @@ class Event extends Model
 
     public function images(){
         return $this->hasMany('App\Models\Image1','event_id','id');
+    }
+    public function plan(){
+        return $this->hasMany('App\Models\Plan','event_id','id');
     }
 
 }

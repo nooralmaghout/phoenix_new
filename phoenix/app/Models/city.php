@@ -30,6 +30,13 @@ class city extends Model
 
     public function event(): HasMany
     {
-        return $this->hasMany(Event::class);
+        return $this->hasMany('App\Models\Event','city_id','id');
+    }
+    public function landmark(): HasMany
+    {
+        return $this->hasMany('App\Models\Landmark','city_id','id');
+    }
+    public function plan(){
+        return $this->hasMany('App\Models\Plan','city_id','id');
     }
 }

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class days_off extends Model
 {
@@ -25,5 +27,9 @@ class days_off extends Model
     public function setEnNameAttribute($value)
     {
         $this->attributes['en_name'] = strtolower($value);
+    }
+
+    public function landmark(){
+        return $this->hasMany('App\Models\Landmark','days_off_id','id');
     }
 }

@@ -26,7 +26,8 @@ class EventSeeder extends Seeder
             "close_time" => '10:00 am',
             "ar_location" => 'دمشق',
             "en_location" => 'damascus',
-            "map_location" => 'damascus'
+            "map_x" => 'damascus',
+            "map_y" => 'damascus'
         ]);
         
     }

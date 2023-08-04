@@ -39,7 +39,7 @@ class Tourist extends Model
          return Carbon::parse($this->attributes['date_of_birth'])->format('d-m-y');
     }
 
-    public function favorites(){
+    public function favorite(){
         return $this->hasMany('App\Models\Favorite','tourist_id','id');
     }
     

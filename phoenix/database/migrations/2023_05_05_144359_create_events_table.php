@@ -28,7 +28,8 @@ return new class extends Migration
             $table->string('en_location')->nullable();
             $table->time('open_time');
             $table->time('close_time');
-            $table->string('map_location')->nullable();
+            $table->string('map_x')->nullable();
+            $table->string('map_y')->nullable();
             $table->timestamps();
         });
     }

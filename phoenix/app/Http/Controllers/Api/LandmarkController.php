@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Landmark;
 use App\Models\Admin;
+use App\Models\City;
+use App\Models\Category;
+use App\Models\Landmarks_type;
 use Illuminate\Support\Facades\DB;
 use App\Models\Image1;
 
@@ -19,8 +22,8 @@ class LandmarkController extends Controller
             "id" => $user_id,
         ] )->exists()){
         $request->validate([
-            "ar_name" => "required|unique:landmarks",
-            "en_name" => "required|unique:landmarks",
+            "ar_name" => "required",
+            "en_name" => "required",
             "city_id" => "required",
             "days_off_id" => "required",
             "ar_description" => "required",
@@ -31,7 +34,8 @@ class LandmarkController extends Controller
             "category_id" => "required",
             "ar_location" => "required",
             "en_location" => "required",
-            "map_location" => "required",
+            "map_x" => "nullable",
+            "map_y" => "nullable",
             "images.*"=> "required|image|mimes:png,jpg,jpeg"
                     ]);
 
@@ -50,7 +54,8 @@ class LandmarkController extends Controller
             $landmark->category_id = $request->category_id;
             $landmark->ar_location = $request->ar_location;
             $landmark->en_location = $request->en_location;
-            $landmark->map_location = $request->map_location;
+            $landmark->map_x = $request->map_x;
+            $landmark->map_y = $request->map_y;
             $landmark->city_id = $request->city_id;
 
             $landmark->save();
@@ -138,7 +143,8 @@ class LandmarkController extends Controller
             $landmark->category_id = !empty($request->category_id)? $request->category_id : $landmark->category_id;
             $landmark->en_location = !empty($request->en_location)? $request->en_location : $landmark->en_location;
             $landmark->ar_location = !empty($request->ar_location)? $request->ar_location : $landmark->ar_location;
-            $landmark->map_location = !empty($request->map_location)? $request->map_location : $landmark->map_location;
+            $landmark->map_x = !empty($request->map_x)? $request->map_x : $landmark->map_x;
+            $landmark->map_y = !empty($request->map_y)? $request->map_y : $landmark->map_y;
 
             $landmark->save();
 
@@ -210,14 +216,21 @@ class LandmarkController extends Controller
         }
     }
 
-    public function searchByName(Request $request){
-        $request->validate([
-            "name" => "required",
+    public function searchByName($search){
+        
+        if(Landmark::where("ar_name", "like", "%".$search."%")->orWhere("en_name", "like", "%".$search."%")->exists()){
            
-        ]);
-        if(Landmark::where("ar_name", "like", "%".$request->name."%")->orWhere("en_name", "like", "%".$request->name."%")->exists()){
-           
-            $landmark_details = Landmark::where("ar_name", "like", "%".$request->name."%")->orWhere("en_name", "like", "%".$request->name."%")->get();
+            $landmark_details = Landmark::where("ar_name", "like", "%".$search."%")->orWhere("en_name", "like", "%".$search."%")->get();
+            foreach ($landmark_details as $landmark){
+                $city = City::where("id",$landmark->city_id)->first();
+                $images = Image1::where("landmark_id",$landmark->city_id)->get();
+                $category = Category::where("id",$landmark->category_id)->first();
+                $type = Landmarks_type::where("id",$landmark->type_id)->first();
+                $landmark->city_id = $city;
+                $landmark->images = $images;
+                $landmark->category_id = $category;
+                $landmark->type_id = $type;
+                }
             return response()->json([
                 "status" => 1,
                 "message" => "Landmark found ",
@@ -231,18 +244,70 @@ class LandmarkController extends Controller
         }
     }
 
-    public function searchByCity(Request $request){
-        $request->validate([
-            "name" => "required",
-           
-        ]);
+    public function searchByCity($search){
+       
         if( Landmark::withWhereHas('city', fn  ($query) => 
-        $query->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")
+        $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
            )->exists()){
            
             $landmark_details = Landmark::withWhereHas('city', fn  ($query) => 
-            $query->where('ar_name', 'like',  "%".$request->name."%")->orWhere('en_name', 'like', "%".$request->name."%")
+            $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
                )->get();
+               foreach ($landmark_details as $landmark){
+                // $city = City::where("id",$landmark->city_id)->first();
+                $images = Image1::where("landmark_id",$landmark->city_id)->get();
+                $category = Category::where("id",$landmark->category_id)->first();
+                $type = Landmarks_type::where("id",$landmark->type_id)->first();
+                // $landmark->city_id = $city;
+                $landmark->images = $images;
+                $landmark->category_id = $category;
+                $landmark->type_id = $type;
+                }
+            return response()->json([
+                "status" => 1,
+                "message" => "Landmark found ",
+                "data" => $landmark_details
+            ],200);
+        }else{
+            return response()->json([
+                "status" => 0,
+                "message" => "Landmark not found"
+            ],404);
+        }
+    }
+
+    public function listLandmark2(){
+        $landmarks = Landmark::get();
+    foreach ($landmarks as $landmark){
+                $city = City::where("id",$landmark->city_id)->first();
+                $images = Image1::where("landmark_id",$landmark->city_id)->get();
+                $category = Category::where("id",$landmark->category_id)->first();
+                $type = Landmarks_type::where("id",$landmark->type_id)->first();
+                $landmark->city_id = $city;
+                $landmark->images = $images;
+                $landmark->category_id = $category;
+                $landmark->type_id = $type;
+                }
+        return response()->json([
+            "status" => 1,
+            "message" => "Listing Landmarks: ",
+            "data" => $landmarks
+        ],200);
+    }
+
+    public function getSingleLandmark2($id){
+        if(Landmark::where("id", $id)->exists()){
+           
+            $landmark_details = Landmark::where("id", $id)->first();
+            $city = City::where("id", $landmark_details->city_id)->first();
+            $category = Category::where("id", $landmark_details->category_id)->first();
+            $type = Landmarks_type::where("id", $landmark_details->type_id)->first();
+            $landmark_details->city_id = $city;
+            $landmark_details->ctegory_id = $category ;
+            $landmark_details->type_id = $type ;
+            $images = Image1::where("landmark_id", $id)->get();
+            $landmark_details->images = $images;
+        
             return response()->json([
                 "status" => 1,
                 "message" => "Landmark found ",

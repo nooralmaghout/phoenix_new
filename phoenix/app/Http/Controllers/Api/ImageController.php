@@ -13,21 +13,54 @@ use Illuminate\Support\Facades\Storage;
 class ImageController extends Controller
 {
     //
-  //   public function store(Request $request)
-  //   {
-  //       //
-  //       $request->validate([
-  //           'image.*' => 'mimes:doc,pdf,docx,zip,jpeg,png,jpg,gif,svg',
-  //       ]);
-  //     if($file = $request->hasFile('image')) {
-             
-  //           $file = $request->file('image') ;
-  //           $fileName = $file->getClientOriginalName() ;
-  //           $destinationPath = public_path().'/images' ;
-  //           $file->move($destinationPath,$fileName);
-  //           return redirect('/uploadfile');
-  //   }
-  // }
+    public function store(Request $request)
+    {
+        //
+        $request->validate([
+            'images' => 'required'//|mimes:png,jpg,jpeg',
+            //'event_id'=>'required'
+        ]);
+        $images = $request->images;
+        foreach ($images as $item){
+          echo "k";
+          $image = new Image1();                      
+          $imageName = (String)time().$item->getClientOriginalName(); 
+          $item->move(public_path('groups'), $imageName);
+          $image->url = $imageName;
+          //$image->event_id = $event->id;
+          $image->save();
+      }
+            
+            return  response()->json([
+              "status" => 1,
+              "message" => "Images saved successfuly "
+          ],200);
+    
+  }
+  public function store2(Request $request)
+    {
+        //
+        $request->validate([
+            'image' => 'required'//|mimes:png,jpg,jpeg',
+            //'event_id'=>'required'
+        ]);
+        // $image = $request->images;
+        // foreach ($images as $item){
+        //   echo "k";
+          $image = new Image1();                      
+          $imageName = (String)time().$request->image->getClientOriginalName(); 
+          $request->image->move(public_path('groups'), $imageName);
+          $image->url = $imageName;
+          //$image->event_id = $event->id;
+          $image->save();
+      
+            
+            return  response()->json([
+              "status" => 1,
+              "message" => "Images saved successfuly "
+          ],200);
+    
+  }
 
       public function listPlaceImages($id){
           $images = Image1::where(['place_id' => $id] )->get();
