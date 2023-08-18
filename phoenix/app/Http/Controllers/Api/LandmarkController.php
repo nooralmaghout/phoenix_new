@@ -255,7 +255,7 @@ class LandmarkController extends Controller
                )->get();
                foreach ($landmark_details as $landmark){
                 // $city = City::where("id",$landmark->city_id)->first();
-                $images = Image1::where("landmark_id",$landmark->city_id)->get();
+                $images = Image1::where("landmark_id",$landmark->id)->get();
                 $category = Category::where("id",$landmark->category_id)->first();
                 $type = Landmarks_type::where("id",$landmark->type_id)->first();
                 // $landmark->city_id = $city;
@@ -280,7 +280,7 @@ class LandmarkController extends Controller
         $landmarks = Landmark::get();
     foreach ($landmarks as $landmark){
                 $city = City::where("id",$landmark->city_id)->first();
-                $images = Image1::where("landmark_id",$landmark->city_id)->get();
+                $images = Image1::where("landmark_id",$landmark->id)->get();
                 $category = Category::where("id",$landmark->category_id)->first();
                 $type = Landmarks_type::where("id",$landmark->type_id)->first();
                 $landmark->city_id = $city;

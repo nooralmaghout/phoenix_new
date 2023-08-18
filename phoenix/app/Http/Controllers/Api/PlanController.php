@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Plan;
 use App\Models\Rate;
-
+use App\Models\Image1;
 use App\Models\Place;
 use App\Models\Event;
 use App\Models\Tourist;
@@ -121,10 +121,10 @@ class PlanController extends Controller
             "stars" => "required",
 
         ]);
-        $tourist_id = auth()->user()->id;
+        // $tourist_id = auth()->user()->id;
         $plan = new Plan();
 
-        $favorite->tourist_id = $tourist_id;
+        $plan->tourist_id = $user_id;
         $plan->name = $request->name;
         $plan->city_id = $request->city_id;
         $plan->breakfast_id = $request->breakfast_id;
@@ -136,7 +136,7 @@ class PlanController extends Controller
         $plan->start_time = $request->start_time;
         $plan->end_time = $request->end_time;
         $plan->start_date = $request->start_date;
-        $plan->hotel_id = $request->end_date;
+        $plan->hotel_id = $request->hotel_id;
         $plan->stars = $request->stars;
 
         $plan->save();
@@ -180,7 +180,7 @@ class PlanController extends Controller
     $euclidean = new Euclidean();
     $place_list =Array();
     $result =[];
-    $places = Place::with('city','category')->get();
+    $places = Place::with('city','category')->whereIn('category_id',[1,2,3,4,9,10])->where('city_id', $r['city_id'])->get();
     foreach($places as $p){
         $rate= Rate::where('tourist_id',$user_id)->where('place_id',$p->id)->first();
 
@@ -188,36 +188,36 @@ class PlanController extends Controller
             $restaurant = Array(
                 $p->stars,0,0,0,0,0,0,0,0,0,0);
             if($p->category_id == 1){
-                $restaurant[0]=1;
-            }
-            if($p->category_id == 2){
                 $restaurant[1]=1;
             }
-            if($p->category_id == 3){
+            if($p->category_id == 2){
                 $restaurant[2]=1;
-                $restaurant[0]=0.5;
+            }
+            if($p->category_id == 3){
+                $restaurant[3]=1;
+                // $restaurant[1]=0.5;
             }
             if($p->category_id == 4){
-                $restaurant[3]=1;
-                $restaurant[1]=0.5;
-            }
-            if($p->category_id == 5){
                 $restaurant[4]=1;
+                // $restaurant[2]=0.5;
             }
-            if($p->category_id == 6){
-                $restaurant[5]=1;
-            }
-            if($p->category_id == 7){
-                $restaurant[6]=1;
-            }
-            if($p->category_id == 8){
-                $restaurant[7]=1;
-            }
+            // if($p->category_id == 5){
+            //     $restaurant[5]=1;
+            // }
+            // if($p->category_id == 6){
+            //     $restaurant[6]=1;
+            // }
+            // if($p->category_id == 7){
+            //     $restaurant[7]=1;
+            // }
+            // if($p->category_id == 8){
+            //     $restaurant[8]=1;
+            // }
             if($p->category_id == 9){
-                $restaurant[8]=1;
+                $restaurant[9]=1;
             }
             if($p->category_id == 10){
-                $restaurant[9]=1;
+                $restaurant[10]=1;
             }
             
             $place_list[$p->id] =  $restaurant;
@@ -236,7 +236,10 @@ class PlanController extends Controller
         if($value->city_id !=$r['city_id']){
             unset($array[$key]);
         }
+        $images = Image1::where("place_id",$value->id)->get();
+        $value->images = $images;
     }
+    
     return array_values($array);
 
     }
@@ -257,6 +260,8 @@ class PlanController extends Controller
             if ($value->days_off->en_name == $date) {
                 $suggestion->forget($key);
             }
+            $images = Image1::where("landmark_id",$value->id)->get();
+            $value->images = $images;
         }
         
         return $suggestion;
@@ -298,7 +303,10 @@ class PlanController extends Controller
             ->where('close_time','>=',$request['end_time']);
         })
         ->get();
-        
+        foreach ($suggestion as $event){
+            $images = Image1::where("event_id",$event->id)->get();
+            $event->images = $images;
+            }
         
     return $suggestion;
 
@@ -371,6 +379,8 @@ class PlanController extends Controller
         foreach($hotels as $value){
             $rate= Rate::where('tourist_id',$user_id)->where('place_id',$value->id)->first();
             if($rate==Null ||  $rate->rate > 2 ){
+                $images = Image1::where("place_id",$value->id)->get();
+                $value->images = $images;
                 array_push($list,$value);
             }
         }
@@ -388,6 +398,36 @@ class PlanController extends Controller
         ] )->exists()){
 
         $plans = Plan::with('landmark','breakfast','lunch','dinner','hotel','city','event','type')->where("tourist_id", $tourist_id)->get();
+        foreach ($plans as $plan){
+            // foreach($suggestion as $s){
+                if($plan->landmark != NULL){
+                    $images = Image1::where("landmark_id",$plan->landmark_id)->get();
+                    $plan->landmark->images = $images;
+                }
+                if($plan->breakfast != NULL){
+                    $images = Image1::where("place_id",$plan->breakfast_id)->get();
+                    $plan->breakfast->images = $images;
+                }
+
+                if($plan->lunch != NULL){
+                    $images = Image1::where("place_id",$plan->lunch_id)->get();
+                    $plan->lunch->images = $images;
+                }
+                if($plan->dinner != NULL){
+                    $images = Image1::where("place_id",$plan->dinner_id)->get();
+                    $plan->dinner->images = $images;
+                }
+                if($plan->hotel != NULL){
+                    $images = Image1::where("place_id",$plan->hotel_id)->get();
+                    $plan->hotel->images = $images;
+                }
+                if($plan->event != NULL){
+                    $images = Image1::where("event_id",$plan->event_id)->get();
+                    $plan->event->images = $images;
+                }
+            // }
+           
+            }
 
         return response()->json([
             "status" => 1,
@@ -420,16 +460,41 @@ class PlanController extends Controller
             "tourist_id" => $tourist_id
             ])->exists()){
            
-            $plan_details = Plan::with('landmark','breakfast','lunch','dinner','hotel','city','event','type')->
+            $plan = Plan::with('landmark','breakfast','lunch','dinner','hotel','city','event','type')->
             where([
                 "id"=> $id,
                 "tourist_id" => $tourist_id
                 ]
             )->first();
+            if($plan->landmark != NULL){
+                $images = Image1::where("landmark_id",$plan->landmark_id)->get();
+                $plan->landmark->images = $images;
+            }
+            if($plan->breakfast != NULL){
+                $images = Image1::where("place_id",$plan->breakfast_id)->get();
+                $plan->breakfast->images = $images;
+            }
+
+            if($plan->lunch != NULL){
+                $images = Image1::where("place_id",$plan->lunch_id)->get();
+                $plan->lunch->images = $images;
+            }
+            if($plan->dinner != NULL){
+                $images = Image1::where("place_id",$plan->dinner_id)->get();
+                $plan->dinner->images = $images;
+            }
+            if($plan->hotel != NULL){
+                $images = Image1::where("place_id",$plan->hotel_id)->get();
+                $plan->hotel->images = $images;
+            }
+            if($plan->event != NULL){
+                $images = Image1::where("event_id",$plan->event_id)->get();
+                $plan->event->images = $images;
+            }
             return response()->json([
                 "status" => 1,
                 "message" => "Plan found ",
-                "data" => $plan_details
+                "data" => $plan
             ],200);
             }else{
                 return response()->json([
@@ -536,13 +601,43 @@ class PlanController extends Controller
         )->where("tourist_id",$user_id)
         ->exists()){
            
-            $plan_details = Plan::where("name", "like", "%".$search."%")
+            $plans = Plan::where("name", "like", "%".$search."%")
             ->where("tourist_id",$user_id)
             ->get();
+            foreach ($plans as $plan){
+                // foreach($suggestion as $s){
+                    if($plan->landmark != NULL){
+                        $images = Image1::where("landmark_id",$plan->landmark_id)->get();
+                        $plan->landmark->images = $images;
+                    }
+                    if($plan->breakfast != NULL){
+                        $images = Image1::where("place_id",$plan->breakfast_id)->get();
+                        $plan->breakfast->images = $images;
+                    }
+    
+                    if($plan->lunch != NULL){
+                        $images = Image1::where("place_id",$plan->lunch_id)->get();
+                        $plan->lunch->images = $images;
+                    }
+                    if($plan->dinner != NULL){
+                        $images = Image1::where("place_id",$plan->dinner_id)->get();
+                        $plan->dinner->images = $images;
+                    }
+                    if($plan->hotel != NULL){
+                        $images = Image1::where("place_id",$plan->hotel_id)->get();
+                        $plan->hotel->images = $images;
+                    }
+                    if($plan->event != NULL){
+                        $images = Image1::where("event_id",$plan->event_id)->get();
+                        $plan->event->images = $images;
+                    }
+                // }
+               
+                }
             return response()->json([
                 "status" => 1,
                 "message" => "Plan found ",
-                "data" => $plan_details
+                "data" => $plans
             ],200);
             }else{
                 return response()->json([
@@ -567,13 +662,43 @@ class PlanController extends Controller
         $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
            )->exists()){
            
-            $plan_details = Plan::where('tourist_id', '=',  $user_id)->withWhereHas('city', fn  ($query) => 
+            $plans = Plan::where('tourist_id', '=',  $user_id)->withWhereHas('city', fn  ($query) => 
             $query->where('ar_name', 'like',  "%".$search."%")->orWhere('en_name', 'like', "%".$search."%")
                )->get();
+               foreach ($plans as $plan){
+                // foreach($suggestion as $s){
+                    if($plan->landmark != NULL){
+                        $images = Image1::where("landmark_id",$plan->landmark_id)->get();
+                        $plan->landmark->images = $images;
+                    }
+                    if($plan->breakfast != NULL){
+                        $images = Image1::where("place_id",$plan->breakfast_id)->get();
+                        $plan->breakfast->images = $images;
+                    }
+    
+                    if($plan->lunch != NULL){
+                        $images = Image1::where("place_id",$plan->lunch_id)->get();
+                        $plan->lunch->images = $images;
+                    }
+                    if($plan->dinner != NULL){
+                        $images = Image1::where("place_id",$plan->dinner_id)->get();
+                        $plan->dinner->images = $images;
+                    }
+                    if($plan->hotel != NULL){
+                        $images = Image1::where("place_id",$plan->hotel_id)->get();
+                        $plan->hotel->images = $images;
+                    }
+                    if($plan->event != NULL){
+                        $images = Image1::where("event_id",$plan->event_id)->get();
+                        $plan->event->images = $images;
+                    }
+                // }
+               
+                }
             return response()->json([
                 "status" => 1,
                 "message" => "Plan found ",
-                "data" => $plan_details
+                "data" => $plans
             ],200);
             }else{
                 return response()->json([

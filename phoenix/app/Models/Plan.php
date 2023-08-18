@@ -27,7 +27,6 @@ class Plan extends Model
     "type_id",
     "city_id",
     "start_date",
-    "end_date",
     "stars",
     ];
 
